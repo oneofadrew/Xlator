@@ -1,0 +1,2 @@
+# translator
+Translator GAS library
