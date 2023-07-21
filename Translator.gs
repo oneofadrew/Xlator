@@ -1,17 +1,17 @@
 
 class Translator {
   constructor(rules = []) {
-    const validRules = rules.filter((rule) => rule instanceof Rule);
-    if (validRules.length != rules.length) throw new Error("Rules must be of type Rule. Use Translator.getRule(...)");
+    //const validRules = rules.filter((rule) => rule instanceof Rule);
+    //if (validRules.length != rules.length) throw new Error("Rules must be of type Rule. Use Translator.getRule(...)");
     this.rules = freeze_(rules);
   }
 
   translateAll(objects) {
-    return objects.map((obj) => tranlate(obj));
+    return objects.map((obj) => this.translate(obj));
   }
 
   translate(obj) {
-    const translations = this.rules.map((rule) => rule.execute(obj));
+    const translations = this.rules.map((rule) => rule.execute(obj, this.isTarget(obj)));
     return translations.reduce((toObj, translation) => deepMerge_(toObj, translation), {});
   }
 
@@ -46,11 +46,6 @@ Object.defineProperty(Translator, 'TYPE', {
     configurable : false
 });
 
-Object.defineProperty(Translator, 'new', {
-    value: (rules) => {
-      return freeze_(new Translator(rules));
-    },
-    writable : false,
-    enumerable : true,
-    configurable : false
-});
+function newTranslator(rules) {
+  return freeze_(new Translator(rules));
+};

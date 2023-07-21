@@ -1,6 +1,5 @@
-let frozen_ = true;
+let frozen_ = false;
 function immutable() { frozen_ = frozen_ || true; }
-function isImmutable() { return frozen_; }
 function mutable() { frozen_ = frozen_ && false; }
 function isMutable() { return !frozen_; }
 function freeze_(o) { return frozen_ ? Object.freeze(o) : o; }

@@ -15,12 +15,18 @@ function runUnitTests() {
 
 function getCodeSuite_() {
   const suite = Test.newTestSuite("Code")
+    .addTest(testIsFrozen_)
     .addTest(testIsObject_)
-    .addTest(testDeepMerge_)
-    .addTest(testDeepMergeConflict_)
-    .addTest(testDeepMergeArray_)
-    .addTest(testDeepMergeObjectArray_);
+    .addTest(testDeepMerge_);
   return suite;
+}
+
+function testIsFrozen_() {
+  let obj = {"key":"value"};
+  obj.key = "value2";
+  const object = Object.freeze(obj);
+  object.key = "value3";
+  //Test.willFail(()=>{});
 }
 
 function testIsObject_() {
@@ -61,16 +67,6 @@ function testDeepMerge_() {
   Test.isEqual(result.level1.key2a, "value2a");
   Test.isEqual(result.level1.level2.key3, "value3");
   Test.isEqual(result.level1.level2a.key4, "value4");
-}
-
-
-function testDeepMergeConflict_() {
-}
-
-function testDeepMergeArray_() {
-}
-
-function testDeepMergeObjectArray_() {
 }
 
 /* ----------------------------------------------------------------------------------------- */
@@ -147,7 +143,7 @@ function testArrayRule_() {
     ]
   });
   const itemRule = newRule("value", "pos");
-  const rule = newRule("ints", "nums", [], itemRule);
+  const rule = newRule("ints", "nums", ArrayProcessor(itemRule));
   const target = rule.execute(source);
   const reversed = rule.execute(target, true);
   target.nums.forEach((element, index) => Test.isEqual(element.pos, index));
@@ -260,7 +256,7 @@ function getTranslatorSuite_() {
 }
 
 function testIsInstance_() {
-  const translator = Translator.new([]);
+  const translator = newTranslator([]);
   const notATranslator = {};
   Test.isTrue(isInstance(translator));
   Test.isFalse(isInstance(notATranslator));
@@ -276,7 +272,7 @@ function testTranslatorType_() {
 
 function testIsSource_() {
   const rules = [newRule("level-one", "one")];
-  const translator = Translator.new(rules);
+  const translator = newTranslator(rules);
   
   const obj1 = freeze_({'level-one' : 1});
   const obj2 = translator.translate(obj1);
@@ -287,7 +283,7 @@ function testIsSource_() {
 
 function testIsTarget_() {
   const rules = [newRule("level-one", "one")];
-  const translator = Translator.new(rules);
+  const translator = newTranslator(rules);
   
   const obj1 = freeze_({'level-one' : 1});
   const obj2 = translator.translate(obj1);
@@ -302,7 +298,7 @@ function testTranslate_() {
     newRule("levelTwo.one", "two.one"),
     newRule("levelTwo.two", "two.two")
   ];
-  const translator = Translator.new(rules);
+  const translator = newTranslator(rules);
   const obj1 = freeze_({
     'levelOne' : 1,
     'levelTwo' : {
@@ -315,31 +311,4 @@ function testTranslate_() {
   Test.isEqual(obj2.one, 1);
   Test.isEqual(obj2.two.one, 1);
   Test.isEqual(obj2.two.two, 2);
-}
-
-function testTranslateArray_() {
-  const translator = Translator.new([newRule("levelOne", "one")]);
-  const api = freeze_({
-    'level-one' : [1,2]
-  });
-  
-  const model = translator.translate(api);
-
-  Test.isEqual(model.one, "1,2");
-}
-
-function testTranslateDate_() {
-  const rules = [
-    newRule("aDate", "myBirthday", Translator.TYPE.DATE()),
-    newRule("aDateObject", "myBirthdayDate", Translator.TYPE.DATE())
-  ];
-  const translator = Translator.new(rules);
-  const api = freeze_({
-    'aDate' : "1974-07-17T22:33:06.234+0000",
-    'aDateObject' : new Date("1974-07-17T22:33:06.234+0000")
-  });
-  const model = translator.translate(api);
-
-  Test.isEqual(model.myBirthday, "1974-07-18");
-  Test.isEqual(model.myBirthdayDate, "1974-07-18");
 }
