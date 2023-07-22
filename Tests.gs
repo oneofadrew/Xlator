@@ -248,7 +248,6 @@ function testArrayStringProcessor_() {
 function getTranslatorSuite_() {
   const suite = Test.newTestSuite("Translator")
     .addTest(testIsInstance_)
-    .addTest(testTranslatorType_)
     .addTest(testIsSource_)
     .addTest(testIsTarget_)
     .addTest(testTranslate_);
@@ -260,14 +259,6 @@ function testIsInstance_() {
   const notATranslator = {};
   Test.isTrue(isInstance(translator));
   Test.isFalse(isInstance(notATranslator));
-}
-
-function testTranslatorType_() {
-  Test.isEqual(Translator.TYPE.DEFAULT, "DEFAULT");
-  Test.isEqual(Translator.TYPE.DATE(), "DATE:Australia/Sydney:yyyy-MM-dd");
-  Test.isEqual(Translator.TYPE.DATE("format"), "DATE:Australia/Sydney:format");
-  Test.isEqual(Translator.TYPE.DATE("format", "timezone"), "DATE:timezone:format");
-  Test.isEqual(Translator.TYPE.ARRAY, "ARRAY");
 }
 
 function testIsSource_() {

@@ -1,6 +1,6 @@
 let frozen_ = false;
-function immutable() { frozen_ = frozen_ || true; }
-function mutable() { frozen_ = frozen_ && false; }
+function immutable() { frozen_ = true; }
+function mutable() { frozen_ = false; }
 function isMutable() { return !frozen_; }
 function freeze_(o) { return frozen_ ? Object.freeze(o) : o; }
 
@@ -26,23 +26,3 @@ function isObject_(item) {
     !Array.isArray(item)
   );
 }
-
-/*
-
-To Do
-gardens
-clean
-
-Tue
-flights
-pool
-
-Wed
-
-Thu
-Nate's Dietician
-
-Fri
-Lunch witb Ivan
-
-*/

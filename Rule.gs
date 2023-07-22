@@ -1,4 +1,3 @@
-
 class Rule {
   constructor(fromPath, toPath, processor) {
     this.sourcePath = fromPath ? freeze_(fromPath.split(".")) : fromPath;
@@ -15,8 +14,14 @@ class Rule {
   }
 }
 
-function newRule(apiPath, modelPath, processor) {
-  return freeze_(new Rule(apiPath, modelPath, processor));
+/**
+ * A rule is the starting point for a tranlation of a field from source to target.
+ * @param fromPath - The path through the source object to get to the value for this rule
+ * @param toPath - The path to put the processed value in the target object
+ * @param processor - A chained instance of a processor or another rule. This is what will process the value that is found at the end of the fromPath for this rule.
+ */
+function newRule(fromPath, toPath, processor) {
+  return freeze_(new Rule(fromPath, toPath, processor));
 }
 
 class Processor {
@@ -25,10 +30,17 @@ class Processor {
   }
 }
 
+/**
+ * @param execute - A function with parameters (value, reverse) where value is the value to process from the end of the rule path and reverse is a boolean that signifies whether we are processing from source to target (false) or target to source (true).
+ */
 function newCustomProcessor(execute) {
   return freeze_(new Processor(execute));
 }
 
+/**
+ * The FlipDirectionProcessor changes the direction of the processor provided. For instance a StringNumberProcessor becomes a NumberStringProcessor.
+ * @param processor - The processor to flip direction on.
+ */
 function FlipDirectionProcessor(processor) {
   const p = processor ? processor : DefaultProcessor("");
   return freeze_(new Processor((value, reverse) => {
@@ -37,6 +49,9 @@ function FlipDirectionProcessor(processor) {
   }));
 }
 
+/**
+ * The ArrayProcessor picks up the value and if it's an array iterates over it and calls the processor to create an array of processed values.
+ */
 function ArrayProcessor(processor) {
   const p = processor ? processor : DefaultProcessor("");
   return freeze_(new Processor((value, reverse) => {
@@ -44,6 +59,9 @@ function ArrayProcessor(processor) {
   }));
 }
 
+/**
+ * 
+ */
 function ArrayStringProcessor(processor) {
   const p = processor ? processor : DefaultProcessor("");
   return freeze_(new Processor((object, reverse) => {
@@ -59,12 +77,18 @@ function ArrayStringProcessor(processor) {
   }));
 }
 
+/**
+ * 
+ */
 function DefaultProcessor(defaultValue) {
   return freeze_(new Processor((value) => {
     return value == undefined || value == null ? defaultValue : value;
   }));
 }
 
+/**
+ * 
+ */
 function JsonStringProcessor(rule) {
   return freeze_(new Processor((value, reverse) => {
     if (!reverse) {
@@ -76,7 +100,9 @@ function JsonStringProcessor(rule) {
     }
   }));
 }
-
+/**
+ * 
+ */
 function StringNumberProcessor(multiplier = 1, defaultValue = 0) {
   return freeze_(new Processor((value, reverse) => {
     const numberValue = Number(value);
@@ -85,6 +111,9 @@ function StringNumberProcessor(multiplier = 1, defaultValue = 0) {
   }));
 }
 
+/**
+ * 
+ */
 function DateProcessor(sourceTZ = "Australia/Sydney", sourceFormat = "yyyy-MM-dd'T'HH:mm:ss.sssZ", targetTZ = "Australia/Sydney", targetFormat = "yyyy-MM-dd") {
   return freeze_(new Processor((value, reverse) => {
     const fromTZ = reverse ? targetTZ : sourceTZ;
@@ -96,6 +125,9 @@ function DateProcessor(sourceTZ = "Australia/Sydney", sourceFormat = "yyyy-MM-dd
   }));
 }
 
+/**
+ * 
+ */
 function NumberDateProcessor(timezone = "Australia/Sydney", format = "yyyy-MM-dd") {
   return freeze_(new Processor((value, reverse) => {
     const dateValue = reverse ? Utilities.parseDate(value, timezone, format) : new Date(value);
