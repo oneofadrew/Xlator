@@ -1,7 +1,7 @@
 function setUp_() {}
 function tearDown_() {}
 
-function runUnitTests() {
+function runUnitTests_() {
   const suite = Test.newTestSuite("All Tests")
     .addSetUp(setUp_)
     .addTearDown(tearDown_)
@@ -158,6 +158,7 @@ function getProcessorSuite_() {
     .addTest(testJsonStringProcessor_)
     .addTest(testStringNumberProcessor_)
     .addTest(testNumberDateProcessor_)
+    .addTest(testStringToNumberDateProcessor_)
     .addTest(testFlipDirectionProcessor_)
     .addTest(testArrayStringProcessor_)
     .addTest(testDateFormatProcessor_);
@@ -213,6 +214,15 @@ function testDateFormatProcessor_() {
 function testNumberDateProcessor_() {
   const processor = NumberDateProcessor();
   const value = 1689688800000;
+  const test = processor.execute(value, false);
+  const reversed = processor.execute(test, true);
+  Test.isEqual(test, "2023-07-19");
+  Test.isEqual(reversed, value);
+}
+
+function testStringToNumberDateProcessor_() {
+  const processor = StringNumberProcessor(1,0,NumberDateProcessor());
+  const value = "1689688800000";
   const test = processor.execute(value, false);
   const reversed = processor.execute(test, true);
   Test.isEqual(test, "2023-07-19");
