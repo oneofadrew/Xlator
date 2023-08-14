@@ -97,12 +97,14 @@ function ArrayStringProcessor(processor) {
   const p = processor ? processor : DefaultProcessor();
   return freeze_(new Processor((object, reverse) => {
     if (!reverse) {
+      if (!object) return "";
       const processedArray = object.map(element => p.execute(element, reverse));
-      const safeArray = processedArray.map(element => element.replace(/,/g, "\\,"));
+      const safeArray = processedArray.map(element => element ? element.replace(/,/g, "\\,") : element);
       return safeArray.join(", ");
     } else {
+      if (!object) return null;
       const safeArrayString = object.replace(/\\,/g,":comma:");
-      const safeArray = safeArrayString.split(",").map(element => element.replace(/:comma:/g,",").trim());
+      const safeArray = safeArrayString.split(",").map(element => element ? element.replace(/:comma:/g,",").trim() : element);
       return safeArray.map(element => p.execute(element, reverse));
     }
   }));
@@ -134,7 +136,7 @@ function JsonStringProcessor(rule) {
       return rule.execute(json, reverse);
     } else {
       const json = rule.execute(value, reverse);
-      return JSON.stringify(json);
+      return json ? JSON.stringify(json) : json;
     }
   }));
 }
@@ -150,6 +152,7 @@ function JsonStringProcessor(rule) {
 function StringNumberProcessor(multiplier = 1, defaultValue = 0, processor) {
   const chainedProcessor = processor ? processor : DefaultProcessor(defaultValue);
   return freeze_(new Processor((value, reverse) => {
+    if (value === null || value === undefined) return null;
     if (reverse) {
       const numberValue = chainedProcessor.execute(value, reverse);
       return String(numberValue * multiplier);
@@ -171,14 +174,28 @@ function StringNumberProcessor(multiplier = 1, defaultValue = 0, processor) {
  * @param {string} targetFormat - the target format. Default is "yyyy-MM-dd".
  * @return {Processor} The corresponding Processor instance.
  */
-function DateProcessor(sourceTZ = "GMT", sourceFormat = "yyyy-MM-dd'T'HH:mm:ss.sssZ", targetTZ = "Australia/Sydney", targetFormat = "yyyy-MM-dd") {
+function DateProcessor(sourceTZ = "Australia/Sydney", sourceFormat = "yyyy-MM-dd'T'HH:mm:ss.sssZ", targetTZ = "Australia/Sydney", targetFormat = "yyyy-MM-dd", defaultValue = "") {
   return freeze_(new Processor((value, reverse) => {
+    if (value === undefined || value === null) return defaultValue;
     const fromTZ = reverse ? targetTZ : sourceTZ;
     const fromformat = reverse ? targetFormat : sourceFormat;
     const toTZ = reverse ? sourceTZ : targetTZ
     const toFormat = reverse ? sourceFormat : targetFormat;
     const dateValue = Utilities.parseDate(value, fromTZ, fromformat);
     return Utilities.formatDate(dateValue, toTZ, toFormat);
+  }));
+}
+
+/**
+ * A StringDateProcessor converts a string representation of a date from a source format and timezone to a Date object.
+ * @param {string} timezone - the timezone. Default is "Australia/Sydney".
+ * @param {string} format - the format. Default is "yyyy-MM-dd".
+ * @return {Processor} The corresponding Processor instance.
+ */
+function StringDateProcessor(timezone = "Australia/Sydney", format = "yyyy-MM-dd'T'HH:mm:ss.sssZ") {
+  return freeze_(new Processor((value, reverse) => {
+    if (value === undefined || value === null) return reverse ? "" : null;
+    return reverse ? Utilities.formatDate(value, timezone, format) : Utilities.parseDate(value, timezone, format);
   }));
 }
 
@@ -190,6 +207,7 @@ function DateProcessor(sourceTZ = "GMT", sourceFormat = "yyyy-MM-dd'T'HH:mm:ss.s
  */
 function NumberDateProcessor(timezone = "Australia/Sydney", format = "yyyy-MM-dd") {
   return freeze_(new Processor((value, reverse) => {
+    if (value === undefined || value === null) return null;
     const dateValue = reverse ? Utilities.parseDate(value, timezone, format) : new Date(value);
     return reverse ? dateValue.getTime() : Utilities.formatDate(dateValue, timezone, format);
   }));

@@ -1,5 +1,6 @@
 function setUp_() {}
 function tearDown_() {}
+const nullProcessor = CustomProcessor(() => null);
 
 function runUnitTests_() {
   const suite = Test.newTestSuite("All Tests")
@@ -82,8 +83,16 @@ function getRuleSuite_() {
 }
 
 function testRule_() {
+  //null checks
+  const nullRule = newRule("level-one", "one", nullProcessor);
+  Test.isEqual(nullRule.execute(null, true), {"level-one" : null});
+  Test.isEqual(nullRule.execute(undefined, true), {"level-one" : null});
+  Test.isEqual(nullRule.execute(null, false), {"one" : null});
+  Test.isEqual(nullRule.execute(undefined, false), {"one" : null});
+
   const obj1 = freeze_({'level-one' : 1});
   const rule = newRule("level-one", "one");
+
   const obj2 = rule.execute(obj1)
   Test.isEqual(obj2.one, 1);
 
@@ -93,12 +102,20 @@ function testRule_() {
 }
 
 function testNestedRule_() {
+  //null checks
+  const nullRule = newRule("level-one.level-two", "two", nullProcessor);
+  Test.isEqual(nullRule.execute(null, true), {"level-one" : {"level-two" : null}});
+  Test.isEqual(nullRule.execute(undefined, true), {"level-one" : {"level-two" : null}});
+  Test.isEqual(nullRule.execute(null, false), {"two" : null});
+  Test.isEqual(nullRule.execute(undefined, false), {"two" : null});
+
   const obj1 = freeze_({
     'level-one' : {
       'level-two' : 2
     }
   });
   const rule = newRule("level-one.level-two", "two");
+
   const obj2 = rule.execute(obj1)
   Test.isEqual(obj2.two, 2);
 
@@ -108,10 +125,18 @@ function testNestedRule_() {
 }
 
 function testReverseRule_() {
+  //null checks
+  const nullRule = newRule("levelOne.levelTwo", "two", nullProcessor);
+  Test.isEqual(nullRule.execute(null, true), {"levelOne" : {"levelTwo" : null}});
+  Test.isEqual(nullRule.execute(undefined, true), {"levelOne" : {"levelTwo" : null}});
+  Test.isEqual(nullRule.execute(null, false), {"two" : null});
+  Test.isEqual(nullRule.execute(undefined, false), {"two" : null});
+
   const obj2 = freeze_({
     'two' : 2
   });
   const rule = newRule("levelOne.levelTwo", "two");
+
   const obj1 = rule.execute(obj2, true)
   Test.isEqual(obj1.levelOne.levelTwo, 2);
 
@@ -121,6 +146,13 @@ function testReverseRule_() {
 }
 
 function testNestedRule2_() {
+  //null checks
+  const nullRule = newRule("level-one.level-two", "one.two", nullProcessor);
+  Test.isEqual(nullRule.execute(null, true), {"level-one" : {"level-two" : null}});
+  Test.isEqual(nullRule.execute(undefined, true), {"level-one" : {"level-two" : null}});
+  Test.isEqual(nullRule.execute(null, false), {"one" : {"two" : null}});
+  Test.isEqual(nullRule.execute(undefined, false), {"one" : {"two" : null}});
+
   const obj1 = freeze_({
     'level-one' : {
       'level-two' : 2
@@ -132,6 +164,16 @@ function testNestedRule2_() {
 }
 
 function testArrayRule_() {
+  //null checks
+  const nullRule = newRule("ints", "nums", ArrayProcessor(nullProcessor));
+  Test.isEqual(nullRule.execute(null, true), {"ints" : null});
+  Test.isEqual(nullRule.execute(undefined, true), {"ints" : null});
+  Test.isEqual(nullRule.execute(null, false), {"nums" : null});
+  Test.isEqual(nullRule.execute(undefined, false), {"nums" : null});
+  
+  Test.isEqual(nullRule.execute({"nums" : [1,2,3]}, true), {"ints" : [null, null, null]});
+  Test.isEqual(nullRule.execute({"ints" : [1,2,3]}, false), {"nums" : [null, null, null]});
+
   const source = freeze_({
     'ints' : [
       {'value' : 0 },
@@ -157,7 +199,9 @@ function getProcessorSuite_() {
     .addTest(testDefaultProcessor_)
     .addTest(testJsonStringProcessor_)
     .addTest(testStringNumberProcessor_)
+    .addTest(testDateProcessor_)
     .addTest(testNumberDateProcessor_)
+    .addTest(testStringDateProcessor_)
     .addTest(testStringToNumberDateProcessor_)
     .addTest(testFlipDirectionProcessor_)
     .addTest(testArrayStringProcessor_)
@@ -167,19 +211,36 @@ function getProcessorSuite_() {
 
 function testDefaultProcessor_() {
   const processor = DefaultProcessor("default");
-  Test.isEqual(processor.execute(""), "");
-  Test.isEqual(processor.execute("a"), "a");
-  Test.isEqual(processor.execute([]), []);
-  Test.isEqual(processor.execute(1), 1);
-  Test.isEqual(processor.execute(true), true);
-  Test.isEqual(processor.execute(1.3), 1.3);
-  Test.isEqual(processor.execute({}), {});
-  Test.isEqual(processor.execute(0), 0);
-  Test.isEqual(processor.execute(undefined), "default");
-  Test.isEqual(processor.execute(null), "default");
+  
+  Test.isEqual(processor.execute("", false), "");
+  Test.isEqual(processor.execute("a", false), "a");
+  Test.isEqual(processor.execute([], false), []);
+  Test.isEqual(processor.execute(1, false), 1);
+  Test.isEqual(processor.execute(true, false), true);
+  Test.isEqual(processor.execute(1.3, false), 1.3);
+  Test.isEqual(processor.execute({}, false), {});
+  Test.isEqual(processor.execute(0, false), 0);
+  Test.isEqual(processor.execute(undefined, false), "default");
+  Test.isEqual(processor.execute(null, false), "default");
+
+  Test.isEqual(processor.execute("", true), "");
+  Test.isEqual(processor.execute("a", true), "a");
+  Test.isEqual(processor.execute([], true), []);
+  Test.isEqual(processor.execute(1, true), 1);
+  Test.isEqual(processor.execute(true, true), true);
+  Test.isEqual(processor.execute(1.3, true), 1.3);
+  Test.isEqual(processor.execute({}, true), {});
+  Test.isEqual(processor.execute(0, true), 0);
+  Test.isEqual(processor.execute(undefined, true), "default");
+  Test.isEqual(processor.execute(null, true), "default");
 }
 
 function testJsonStringProcessor_() {
+  //nullChecks
+  const nullP = JsonStringProcessor(nullProcessor);
+  Test.isEqual(nullP.execute(null, false), null);
+  Test.isEqual(nullP.execute(null, true), null);
+
   const rule = newRule("field.value");
   const processor = JsonStringProcessor(rule);
   const value = "{\"field\":{\"value\":\"1974-07-18\"}}";
@@ -191,6 +252,11 @@ function testJsonStringProcessor_() {
 }
 
 function testStringNumberProcessor_() {
+  //nullChecks
+  const nullP = StringNumberProcessor(null, null, nullProcessor);
+  Test.isEqual(nullP.execute(null, false), null);
+  Test.isEqual(nullP.execute(null, true), null);
+
   const defaultValue = 5;
   const multiplier = 10
   const processor = StringNumberProcessor(multiplier, defaultValue);
@@ -202,7 +268,12 @@ function testStringNumberProcessor_() {
   Test.isEqual(processor.execute("not a number"), defaultValue);
 }
 
-function testDateFormatProcessor_() {
+function testDateProcessor_() {
+  //nullChecks
+  const nullP = DateProcessor();
+  Test.isEqual(nullP.execute(null, false), "");
+  Test.isEqual(nullP.execute(null, true), "");
+
   const processor = DateProcessor();
   const value = "2023-07-13T00:00:00.000+1000";
   const test = processor.execute(value, false);
@@ -212,6 +283,11 @@ function testDateFormatProcessor_() {
 }
 
 function testNumberDateProcessor_() {
+  //nullChecks
+  const nullP = NumberDateProcessor();
+  Test.isEqual(nullP.execute(null, false), null);
+  Test.isEqual(nullP.execute(null, true), null);
+
   const processor = NumberDateProcessor();
   const value = 1689688800000;
   const test = processor.execute(value, false);
@@ -220,7 +296,26 @@ function testNumberDateProcessor_() {
   Test.isEqual(reversed, value);
 }
 
+function testStringDateProcessor_() {
+  //nullChecks
+  const nullP = StringDateProcessor();
+  Test.isEqual(nullP.execute(null, false), null);
+  Test.isEqual(nullP.execute(null, true), "");
+
+  const processor = StringDateProcessor();
+  const value = "2023-07-13T00:00:00.000+1000";
+  const test = processor.execute(value, false);
+  const reversed = processor.execute(test, true);
+  Test.isEqual(test, new Date(1689688800000));
+  Test.isEqual(reversed, value);
+}
+
 function testStringToNumberDateProcessor_() {
+  //nullChecks
+  const nullP = StringNumberProcessor(null, null, nullProcessor);
+  Test.isEqual(nullP.execute(null, false), null);
+  Test.isEqual(nullP.execute(null, true), null);
+
   const processor = StringNumberProcessor(1,0,NumberDateProcessor());
   const value = "1689688800000";
   const test = processor.execute(value, false);
@@ -230,6 +325,11 @@ function testStringToNumberDateProcessor_() {
 }
 
 function testFlipDirectionProcessor_() {
+  //nullChecks
+  const nullP = FlipDirectionProcessor(nullProcessor);
+  Test.isEqual(nullP.execute(null, false), null);
+  Test.isEqual(nullP.execute(null, true), null);
+
   const processor = FlipDirectionProcessor(NumberDateProcessor());
   const value = "2023-07-19";
   const test = processor.execute(value, false);
@@ -239,6 +339,11 @@ function testFlipDirectionProcessor_() {
 }
 
 function testArrayStringProcessor_() {
+  //nullChecks
+  const nullP = ArrayStringProcessor(nullProcessor);
+  Test.isEqual(nullP.execute(null, false), "");
+  Test.isEqual(nullP.execute(null, true), null);
+
   const source = freeze_([
     {'greeting' : "Hello!" },
     {'greeting' : "You're welcome" },
