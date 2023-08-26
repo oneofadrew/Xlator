@@ -78,7 +78,9 @@ function getRuleSuite_() {
     .addTest(testNestedRule_)
     .addTest(testNestedRule2_)
     .addTest(testArrayRule_)
-    .addTest(testReverseRule_);
+    .addTest(testReverseRule_)
+    .addTest(testArrayRuleNesting_)
+    .addTest(testArrayRuleFlattening_);
   return suite;
 }
 
@@ -189,6 +191,49 @@ function testArrayRule_() {
   const target = rule.execute(source);
   const reversed = rule.execute(target, true);
   target.nums.forEach((element, index) => Test.isEqual(element.pos, index));
+  reversed.ints.forEach((element, index) => Test.isEqual(element.value, index));
+}
+
+function testArrayRuleNesting_() {
+  //null checks
+  const source = freeze_({
+    'sides' : [
+      {'left' : 0, "right" : 5},
+      {'left' : 1, "right" : 6},
+      {'left' : 2, "right" : 7},
+      {'left' : 3, "right" : 8},
+      {'left' : 4, "right" : 9},
+      {'left' : 5, "right" : 10}
+    ]
+  });
+  const rules = [ newRule("left", "x") , newRule("right", "y") ];
+  const nested = newTranslator(rules);
+  const rule = newRule("sides", "pos", ArrayProcessor(nested));
+  const target = rule.execute(source);
+  const reversed = rule.execute(target, true);
+  target.pos.forEach((element, index) => Test.isEqual(element.x, index));
+  target.pos.forEach((element, index) => Test.isEqual(element.y, index + 5));
+  reversed.sides.forEach((element, index) => Test.isEqual(element.left, index));
+  reversed.sides.forEach((element, index) => Test.isEqual(element.right, index + 5));
+}
+
+function testArrayRuleFlattening_() {
+  //null checks
+  const source = freeze_({
+    'ints' : [
+      {'value' : 0 },
+      {'value' : 1 },
+      {'value' : 2 },
+      {'value' : 3 },
+      {'value' : 4 },
+      {'value' : 5 }
+    ]
+  });
+  const itemRule = newRule("value");
+  const rule = newRule("ints", "nums", ArrayProcessor(itemRule));
+  const target = rule.execute(source);
+  const reversed = rule.execute(target, true);
+  target.nums.forEach((element, index) => Test.isEqual(element, index));
   reversed.ints.forEach((element, index) => Test.isEqual(element.value, index));
 }
 

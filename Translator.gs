@@ -27,11 +27,24 @@ class Translator {
   /**
    * Translates an object. An Object will automatically translate source to target or target to source,
    * depending on the shape of the object provided.
-   * @param {object} objects - the object to translate.
+   * @param {object} obj - the object to translate.
    * @return {object} A translated object.
    */
   translate(obj) {
-    const translations = this.rules.map((rule) => rule.execute(obj, this.isTarget(obj)));
+    return this.execute(obj, this.isTarget(obj));
+  }
+
+  /**
+   * Executes the rules for translation using the Rule interface. This means a Translator can also be used
+   * in place of a rule to aggregate rules to apply to objects in arrays at sub elements of the object tree.
+   * Note: this method shouldn't be called directly - you should use the functions translate or translateAll
+   * instead.
+   * @param {object} obj - the object to translate.
+   * @param {boolean} reverse - the direction of the translation.
+   * @return {object} A translated object.
+   */
+  execute(obj, reverse) {
+    const translations = this.rules.map((rule) => rule.execute(obj, reverse));
     return translations.reduce((toObj, translation) => deepMerge_(toObj, translation), {});
   }
 
