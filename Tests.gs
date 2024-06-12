@@ -1,3 +1,7 @@
+//---------------------------------------------------------------------------------------
+// Copyright ⓒ 2024 Drew Harding
+// All rights reserved.
+//---------------------------------------------------------------------------------------
 function setUp_() {}
 function tearDown_() {}
 const nullProcessor = CustomProcessor(() => null);
@@ -12,7 +16,7 @@ function runUnitTests_() {
   suite.run();
 }
 
-/* ----------------------------------------------------------------------------------------- */
+//---------------------------------------------------------------------------------------
 
 function getCodeSuite_() {
   const suite = Test.newTestSuite("Code")
@@ -70,7 +74,7 @@ function testDeepMerge_() {
   Test.isEqual(result.level1.level2a.key4, "value4");
 }
 
-/* ----------------------------------------------------------------------------------------- */
+//---------------------------------------------------------------------------------------
 
 function getRuleSuite_() {
   const suite = Test.newTestSuite("Rule")
@@ -237,7 +241,7 @@ function testArrayRuleFlattening_() {
   reversed.ints.forEach((element, index) => Test.isEqual(element.value, index));
 }
 
-/* ----------------------------------------------------------------------------------------- */
+//---------------------------------------------------------------------------------------
 
 function getProcessorSuite_() {
   const suite = Test.newTestSuite("Rule")
@@ -403,7 +407,7 @@ function testArrayStringProcessor_() {
   reversed.forEach((element, index) => Test.isEqual(element.greeting, source[index].greeting));
 }
 
-/* ----------------------------------------------------------------------------------------- */
+//---------------------------------------------------------------------------------------
 
 function getTranslatorSuite_() {
   const suite = Test.newTestSuite("Translator")

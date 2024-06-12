@@ -1,3 +1,7 @@
+//---------------------------------------------------------------------------------------
+// Copyright ⓒ 2024 Drew Harding
+// All rights reserved.
+//---------------------------------------------------------------------------------------
 /**
  * A Translator contains a list of rules that can translate an object from one shape to another. Each rule maps from a source path
  * defined as a string with dot notation to pull out a value or location within the key/value graph of the object and then applies

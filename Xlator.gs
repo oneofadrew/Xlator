@@ -1,3 +1,7 @@
+//---------------------------------------------------------------------------------------
+// Copyright ⓒ 2024 Drew Harding
+// All rights reserved.
+//---------------------------------------------------------------------------------------
 /** 
  * Whether the library is immutable (true) or not (false). Defaults to mutable.
  */

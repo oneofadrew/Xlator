@@ -1,3 +1,7 @@
+//---------------------------------------------------------------------------------------
+// Copyright ⓒ 2024 Drew Harding
+// All rights reserved.
+//---------------------------------------------------------------------------------------
 /**
  * A rule is the entry point for a tranlation of a field from source to target. A rule also implements the
  * Processor interface, so Rules can also be chained together.or linked with other processors. This creates 
