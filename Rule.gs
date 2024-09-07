@@ -19,19 +19,41 @@ class Rule {
   constructor(fromPath, toPath, processor) {
     this.sourcePath = fromPath ? freeze_(fromPath.split(".")) : fromPath;
     this.targetPath = toPath ? freeze_(toPath.split(".")) : toPath;
-    this.processor = processor ? processor : DefaultProcessor();
+    this.processor = processor ? processor : DefaultProcessor("");
   }
 
   /**
    * Executes a rule on an object.
    * @param {Object} object - The object for the rule to transrom
    */
-  execute(object, reverse = false ) {
-    const fromPath = reverse ? this.targetPath : this.sourcePath;
+  execute(object, reverse=false, filter=false) {
+    const value = this.getSourceValue(object, reverse);
+    if (filter && (value === null || value === undefined)) return null;
+    const processedValue = this.processor.execute(value, reverse, filter);
     const toPath = reverse ? this.sourcePath : this.targetPath;
-    const value = fromPath ? fromPath.reduce((value, property) => value ? value[property] : undefined, object) : object;
-    const processedValue = this.processor.execute(value, reverse);
     return toPath ? toPath.reduceRight((target, property) => (freeze_({ [property] : target })), processedValue) : processedValue;
+  }
+
+  /**
+   * @param {Object} object - The object for the source path to inspect
+   */
+  getSourceValue(object, reverse=false ) {
+    return this.getValue(object, !reverse);
+  }
+
+  /**
+   * @param {Object} object - The object for the target path to inspect
+   */
+  getTargetValue(object, reverse=false ) {
+    return this.getValue(object, reverse);
+  }
+
+  /**
+   * @param {Object} object - The object to inspect
+   */
+  getValue(object, source=false) {
+    const fromPath = source ? this.sourcePath : this.targetPath;
+    return fromPath ? fromPath.reduce((value, property) => value ? value[property] : undefined, object) : object;
   }
 }
 
@@ -71,8 +93,8 @@ function CustomProcessor(execute) {
  * @param {function} processor - The processor to flip direction on.
  * @return {Processor} The corresponding Processor instance.
  */
-function FlipDirectionProcessor(processor) {
-  const p = processor ? processor : DefaultProcessor();
+function FlipDirectionProcessor(processor, defaultValue) {
+  const p = processor ? processor : DefaultProcessor(defaultValue);
   return freeze_(new Processor((value, reverse) => {
     const flipped = !reverse;
     return processor.execute(value, flipped);
@@ -84,8 +106,8 @@ function FlipDirectionProcessor(processor) {
  * @param {function} processor - The processor to process an item in the array.
  * @return {Processor} The corresponding Processor instance.
  */
-function ArrayProcessor(processor) {
-  const p = processor ? processor : DefaultProcessor();
+function ArrayProcessor(processor, defaultValue) {
+  const p = processor ? processor : DefaultProcessor(defaultValue);
   return freeze_(new Processor((value, reverse) => {
     return Array.isArray(value) ? value.map(entry => p.execute(entry, reverse)) : p.execute(value, reverse);
   }));
@@ -97,19 +119,19 @@ function ArrayProcessor(processor) {
  * @param {function} processor - The processor to process an item in the array.
  * @return {Processor} The corresponding Processor instance.
  */
-function ArrayStringProcessor(processor) {
-  const p = processor ? processor : DefaultProcessor();
-  return freeze_(new Processor((object, reverse) => {
+function ArrayStringProcessor(processor, defaultValue) {
+  const p = processor ? processor : DefaultProcessor(defaultValue);
+  return freeze_(new Processor((object, reverse, filter) => {
     if (!reverse) {
       if (!object) return "";
-      const processedArray = object.map(element => p.execute(element, reverse));
+      const processedArray = object.map(element => p.execute(element, reverse, filter));
       const safeArray = processedArray.map(element => element ? element.replace(/,/g, "\\,") : element);
       return safeArray.join(", ");
     } else {
       if (!object) return null;
       const safeArrayString = object.replace(/\\,/g,":comma:");
       const safeArray = safeArrayString.split(",").map(element => element ? element.replace(/:comma:/g,",").trim() : element);
-      return safeArray.map(element => p.execute(element, reverse));
+      return safeArray.map(element => p.execute(element, reverse, filter));
     }
   }));
 }
@@ -120,7 +142,7 @@ function ArrayStringProcessor(processor) {
  * @param (any) defaultValue - the default value to return when undefined.
  * @return {Processor} The corresponding Processor instance.
  */
-function DefaultProcessor(defaultValue = "") {
+function DefaultProcessor(defaultValue) {
   return freeze_(new Processor((value) => {
     return value == undefined || value == null ? defaultValue : value;
   }));
@@ -134,12 +156,12 @@ function DefaultProcessor(defaultValue = "") {
  * @return {Processor} The corresponding Processor instance.
  */
 function JsonStringProcessor(rule) {
-  return freeze_(new Processor((value, reverse) => {
+  return freeze_(new Processor((value, reverse, filter) => {
     if (!reverse) {
       const json = JSON.parse(value);
-      return rule.execute(json, reverse);
+      return rule.execute(json, reverse, filter);
     } else {
-      const json = rule.execute(value, reverse);
+      const json = rule.execute(value, reverse, filter);
       return json ? JSON.stringify(json) : json;
     }
   }));
@@ -155,16 +177,16 @@ function JsonStringProcessor(rule) {
  */
 function StringNumberProcessor(multiplier = 1, defaultValue = 0, processor) {
   const chainedProcessor = processor ? processor : DefaultProcessor(defaultValue);
-  return freeze_(new Processor((value, reverse) => {
+  return freeze_(new Processor((value, reverse, filter) => {
     if (value === null || value === undefined) return null;
     if (reverse) {
-      const numberValue = chainedProcessor.execute(value, reverse);
+      const numberValue = chainedProcessor.execute(value, reverse, filter);
       return String(numberValue * multiplier);
     } else {
       const numberValue = Number(value);
       if (Number.isNaN(numberValue)) return defaultValue;
       numberFactor = numberValue / multiplier;
-      return chainedProcessor.execute(numberFactor, reverse);
+      return chainedProcessor.execute(numberFactor, reverse, filter);
     }
   }));
 }
