@@ -24,8 +24,8 @@ class Translator {
    * @param {array[object]} objects - the array of objects to translate.
    * @return {array[object]} An array of translated objects.
    */
-  translateAll(objects) {
-    return objects.map((obj) => this.translate(obj));
+  translateAll(objects, filter=true) {
+    return objects.map((obj) => this.translate(obj, filter));
   }
 
   /**
@@ -34,8 +34,8 @@ class Translator {
    * @param {object} obj - the object to translate.
    * @return {object} A translated object.
    */
-  translate(obj) {
-    return this.execute(obj, this.isTarget(obj));
+  translate(obj, filter=true) {
+    return this.execute(obj, this.isTarget(obj), filter);
   }
 
   /**
@@ -45,11 +45,13 @@ class Translator {
    * instead.
    * @param {object} obj - the object to translate.
    * @param {boolean} reverse - the direction of the translation.
+   * @param {boolean} filter - filter out undefined values.
    * @return {object} A translated object.
    */
-  execute(obj, reverse) {
-    const translations = this.rules.map((rule) => rule.execute(obj, reverse));
-    return translations.reduce((toObj, translation) => deepMerge_(toObj, translation), {});
+  execute(obj, reverse, filter=true) {
+    const translations = this.rules.map((rule) => rule.execute(obj, reverse, filter));
+    const validTranslations = filter ? translations.filter((translation) => translation != null) : translations;
+    return validTranslations.reduce((toObj, translation) => deepMerge_(toObj, translation), {});
   }
 
   /**
@@ -58,7 +60,7 @@ class Translator {
    * @return {boolean} true if this is a source object.
    */
   isSource(obj) {
-    return this.check_(obj, false);
+    return !this.isTarget(obj);
   }
 
   /**
@@ -67,20 +69,16 @@ class Translator {
    * @return {boolean} true if this is a target object.
    */
   isTarget(obj) {
-    return this.check_(obj, true);
-  }
+    let sourceCount = 0;
+    let targetCount = 0;
 
-  /**
-   * Checks to see if a provided object is in the shape of the source or the target by testing for the appropriate paths
-   * from the rule set.
-   * @param {object} obj - the object to check.
-   * @param {boolean} isTarget - true to check for target, false to check for source.
-   * @return {boolean} The corresponding boolean value for the requested test.
-   */
-  check_(obj, isTarget) {
-    const path = isTarget ? "targetPath" : "sourcePath";
-    const targetProperties = this.rules.map((rule) => rule[path]);
-    return targetProperties.reduce((exists, property) => exists && obj && obj.hasOwnProperty(property), true);
+    this.rules.forEach(rule => {
+      sourceCount += rule.getSourceValue(obj) === undefined ? 0 : 1;
+      targetCount += rule.getTargetValue(obj) === undefined ? 0 : 1;
+    });
+
+    if (targetCount === sourceCount) throw new Error(`Unable to determine direction of translation, source count "${sourceCount}" / target count "${targetCount}"`);
+    return targetCount > sourceCount;
   }
 }
 
